@@ -1,0 +1,125 @@
+<apex:page controller="KONESmartElevatorController" showHeader="false" standardStylesheets="false" sidebar="false" applyHtmlTag="false" applyBodyTag="false" docType="html-5.0">
+
+    <html xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" lang="en">
+
+        <head>
+            <meta charset="utf-8" />
+            <meta http-equiv="x-ua-compatible" content="ie=edge" />
+            <title>IoT - KONE Smart Elevator Demo</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+            <!-- Import the Design System style sheet -->
+            <apex:slds />
+
+            <apex:includeScript value="{!URLFOR($Resource.cometd,'cometd.js')}"/>
+            <apex:includeScript value="{!URLFOR($Resource.jquery_cometd,'jquery-1.5.1.js')}"/>
+            <apex:includeScript value="{!URLFOR($Resource.jquery_cometd,'json2.js')}"/>
+            <apex:includeScript value="{!URLFOR($Resource.jquery_cometd,'jquery.cometd.js')}"/>
+
+            <style>
+                .slds-scope .slds-button_success[disabled] {
+                    background: #e0e5ee;
+                    border-color: transparent;
+                    color: #fff;
+                }
+            </style>
+
+            <script>
+                $(function () {
+
+                    // Connect to the CometD endpoint
+                    $.cometd.init({
+                        url: window.location.protocol + '//' + window.location.hostname + '/cometd/40.0/',
+                        requestHeaders: { Authorization: 'OAuth {!$Api.Session_ID}' },
+                        appendMessageTypeToURL : false
+                    });
+
+                    $.cometd.subscribe('/event/Kone_Event__e', log);
+
+                    $.cometd.subscribe('/event/WATSON_Event__e', log);
+                });
+
+                function log(body) {
+
+                    var data = 'Id: ' + body.data.payload.ID__c + '; Status: ' + body.data.payload.Status__c;
+
+                    $('#console-box').text(data + '\n' + $('#console-box').text());
+                }
+
+                function toggleConsole() {
+
+                    if (!$('#console-box').is(':visible')) {
+
+                        $('#console-box').show();
+                    }
+                    else {
+
+                        $('#console-box').hide();
+                    }
+                }
+            </script>
+
+        </head>
+
+        <body>
+
+            <apex:outputPanel id="scope" layout="block" styleClass="slds-scope">
+
+                <apex:outputPanel rendered="{!publishStatus <> NULL}" layout="block" styleClass="slds-notify slds-notify_alert slds-theme_alert-texture slds-{!IF(publishStatus == 'SUCCESS', 'theme_success', 'theme_error')}">
+                    <span class="slds-assistive-text">error</span>
+                    <h2>{!IF(publishStatus == "SUCCESS", "Success", "Error while trying to update elevator state")}</h2>
+                </apex:outputPanel>
+
+                <p class="slds-text-heading--label slds-m-bottom--small">
+                    KONE Smart Elevator Demo
+                </p>
+
+                <div class="myapp">
+
+                    <apex:form id="form">
+
+                        <div id="spinner" style="display: none; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.7); z-index: 5000; position: absolute; top: 0; left: 0;">
+                            <div role="status" class="slds-spinner slds-spinner_medium slds-spinner_brand">
+                                <span class="slds-assistive-text">Loading</span>
+                                <div class="slds-spinner__dot-a"></div>
+                                <div class="slds-spinner__dot-b"></div>
+                            </div>
+                        </div>
+
+                        <section aria-labelledby="badges">
+
+                            <h2 id="badges" class="slds-text-heading--large slds-m-vertical--large">Elevator Control</h2>
+
+                            <div class="slds-grid">
+                                <apex:commandButton rerender="form" onclick="$('#spinner').show();" oncomplete="$('#spinner').hide();" value="Restart IoT Demo" action="{!resetToStart}" styleClass="slds-button slds-button_brand" style="width: 100%;" />
+                            </div>
+
+                            <br />
+
+                            <div class="slds-grid">
+                                <apex:commandButton rerender="form" onclick="$('#spinner').show();" oncomplete="$('#spinner').hide();" value="Initiate WATSON Event" action="{!initiateWATSONEvent}" styleClass="slds-button slds-button_destructive" style="width: 100%;" />
+                            </div>
+
+                            <br />
+
+                            <p class="slds-text-heading--label slds-m-bottom--small">
+                                To reset this demo you need to deactivate and activate back the Orchestration. Make sure to check "Delete all Instances" checkbox.
+                            </p>
+
+                        </section>
+
+                    </apex:form>
+
+                    <br />
+
+                    <div id="console-box" class="slds-box" style="font-family: 'Courier New', monospace; white-space: pre; height: 300px; scroll-behavior: smooth; overflow-y: scroll;"></div>
+
+                </div>
+
+            </apex:outputPanel>
+
+        </body>
+
+    </html>
+
+</apex:page>
